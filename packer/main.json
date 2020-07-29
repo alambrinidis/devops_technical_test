@@ -1,0 +1,57 @@
+{
+  "variables": {
+    "aws_access_key": "",
+    "aws_secret_key": "",
+    "vpc-id": "",
+    "subnet_id": ""
+  },
+  "builders": [
+    {      
+    	"type": "amazon-ebs",
+    	"ami_block_device_mappings": [{
+        	"device_name": "/dev/xvda",
+        	"volume_size": 100,
+        	"delete_on_termination": true,
+        	"volume_type": "gp2"
+        }],
+      	"access_key": "{{user `aws_access_key`}}",
+      	"secret_key": "{{user `aws_secret_key`}}",
+      	"region": "eu-west-1",
+	    "source_ami": "ami-0c3e74fa87d2a4227",
+    	"instance_type": "t2.micro",
+	    "ssh_username": "ec2-user",
+        "vpc_id": "",
+        "subnet_id" : "",
+        "ssh_keypair_name" : "ssh-key",
+        "ssh_private_key_file": "full-path-to-ssh-key",
+        "ami_name": "medium-ami-{{isotime  | clean_ami_name}}",
+        "communicator": "ssh",
+        "ami_users": ["ami-users-to-share(comma delimited aws account numbers)"],
+        "tags": {
+          "Name": "medium-ami-{{isotime  | clean_ami_name}}",
+          "OS_Version": "Amazon Linux",
+          "Release": "{{isotime  | clean_ami_name}}",
+          "Runner": "EC2"
+      }
+    }
+  ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "execute_command": "echo 'vagrant' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
+            "inline": [
+                "sleep 30",
+                "apt-add-repository ppa:rquillo/ansible",
+                "/usr/bin/apt-get update",
+                "/usr/bin/apt-get -y install ansible"
+            ]
+        },
+        {
+            "type": "ansible-local",
+            "playbook_file": "../ansible/site.yml",
+            "role_paths": [
+                "../ansible/roles/*"
+            ]
+        }
+    ]
+}
